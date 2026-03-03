@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ON-TIME Agenda</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 p-6" x-data="app()">
+    <div class="max-w-xl mx-auto">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl font-black tracking-tighter text-blue-500">ON-TIME</h1>
+            <p class="text-slate-400">Manajemen Agenda Harian</p>
+        </header>
+
+        <div class="space-y-4">
+            <div class="flex gap-2">
+                <input x-model="newAgenda" class="flex-1 bg-slate-800 border border-slate-700 p-3 rounded-lg outline-none" placeholder="Tambah agenda baru...">
+                <button @click="addAgenda()" class="bg-blue-600 px-4 rounded-lg font-bold">+</button>
+            </div>
+            <div class="space-y-2">
+                <template x-for="item in agendas" :key="item.id">
+                    <div class="bg-slate-800 p-4 rounded-xl border-l-4 border-blue-500 flex justify-between">
+                        <span x-text="item.task"></span>
+                        <button @click="deleteItem(item.id)" class="text-slate-500 hover:text-red-400">×</button>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SB_URL = "https://yqfrbdyjhwjysrjentoj.supabase.co";
+        const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxZnJiZHlqaHdqeXNyamVudG9qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0ODM0MjAsImV4cCI6MjA4ODA1OTQyMH0.8G9Lcqem7MbviwmpfFc-lG1Ce2hd1GznVOHDFL2RYOU";
+        const _supabase = supabase.createClient(SB_URL, SB_KEY);
+
+        function app() {
+            return {
+                agendas: [], newAgenda: '',
+                async init() { this.fetchAgendas(); },
+                async fetchAgendas() {
+                    let { data } = await _supabase.from('ontime').select('*').order('id', { ascending: false });
+                    this.agendas = data || [];
+                },
+                async addAgenda() {
+                    if(!this.newAgenda) return;
+                    await _supabase.from('ontime').insert([{ task: this.newAgenda }]);
+                    this.newAgenda = '';
+                    this.fetchAgendas();
+                },
+                async deleteItem(id) {
+                    await _supabase.from('ontime').delete().eq('id', id);
+                    this.fetchAgendas();
+                }
+            }
+        }
+    </script>
+</body>
+</html>
