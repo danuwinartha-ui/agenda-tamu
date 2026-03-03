@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IN-TOUCH Buku Tamu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 p-6" x-data="app()">
+    <div class="max-w-xl mx-auto">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl font-black tracking-tighter text-emerald-500">IN-TOUCH</h1>
+            <p class="text-slate-400">Buku Tamu Digital</p>
+        </header>
+
+        <div class="space-y-6">
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700">
+                <input x-model="guestName" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg mb-3 outline-none" placeholder="Nama Anda">
+                <textarea x-model="guestMsg" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg mb-3 outline-none" placeholder="Pesan..."></textarea>
+                <button @click="sendGuestbook()" class="w-full bg-emerald-600 py-3 rounded-lg font-bold">Kirim Pesan</button>
+            </div>
+            <div class="space-y-3">
+                <template x-for="msg in messages" :key="msg.id">
+                    <div class="p-4 bg-slate-800/50 border border-slate-700 rounded-xl">
+                        <p class="font-bold text-emerald-400" x-text="msg.name"></p>
+                        <p class="text-slate-300" x-text="msg.message"></p>
+                        <button @click="deleteMsg(msg.id)" class="text-xs text-slate-600 hover:text-red-400 mt-2 italic">Hapus</button>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SB_URL = "https://yqfrbdyjhwjysrjentoj.supabase.co";
+        const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxZnJiZHlqaHdqeXNyamVudG9qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0ODM0MjAsImV4cCI6MjA4ODA1OTQyMH0.8G9Lcqem7MbviwmpfFc-lG1Ce2hd1GznVOHDFL2RYOU";
+        const _supabase = supabase.createClient(SB_URL, SB_KEY);
+
+        function app() {
+            return {
+                messages: [], guestName: '', guestMsg: '',
+                async init() { this.fetchMessages(); },
+                async fetchMessages() {
+                    let { data } = await _supabase.from('intouch').select('*').order('id', { ascending: false });
+                    this.messages = data || [];
+                },
+                async sendGuestbook() {
+                    if(!this.guestName || !this.guestMsg) return;
+                    await _supabase.from('intouch').insert([{ name: this.guestName, message: this.guestMsg }]);
+                    this.guestName = ''; this.guestMsg = '';
+                    this.fetchMessages();
+                    alert("Pesan terkirim!");
+                },
+                async deleteMsg(id) {
+                    await _supabase.from('intouch').delete().eq('id', id);
+                    this.fetchMessages();
+                }
+            }
+        }
+    </script>
+</body>
+</html>
