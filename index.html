@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ON-TIME & IN-TOUCH (Live)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 p-6" x-data="app()">
+
+    <div class="max-w-xl mx-auto">
+        <header class="text-center mb-10">
+            <h1 @click="tab = 'ontime'" class="text-4xl font-black cursor-pointer tracking-tighter">UTAMA</h1>
+            <div class="mt-4 flex justify-center gap-2 bg-slate-800 p-1 rounded-xl border border-slate-700">
+                <button @click="tab = 'ontime'" :class="tab === 'ontime' ? 'bg-blue-600' : ''" class="flex-1 py-2 rounded-lg font-bold transition">ON-TIME</button>
+                <button @click="tab = 'intouch'" :class="tab === 'intouch' ? 'bg-emerald-600' : ''" class="flex-1 py-2 rounded-lg font-bold transition">IN-TOUCH</button>
+            </div>
+        </header>
+
+        <div x-show="tab === 'ontime'" class="space-y-4">
+            <div class="flex gap-2">
+                <input x-model="newAgenda" class="flex-1 bg-slate-800 border border-slate-700 p-3 rounded-lg outline-none" placeholder="Tambah agenda baru...">
+                <button @click="addAgenda()" class="bg-blue-600 px-4 rounded-lg font-bold">+</button>
+            </div>
+            <div class="space-y-2">
+                <template x-for="item in agendas" :key="item.id">
+                    <div class="bg-slate-800 p-4 rounded-xl border-l-4 border-blue-500 flex justify-between">
+                        <span x-text="item.task"></span>
+                        <button @click="deleteItem('ontime', item.id)" class="text-slate-500 hover:text-red-400">×</button>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <div x-show="tab === 'intouch'" class="space-y-6">
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700">
+                <input x-model="guestName" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg mb-3 outline-none" placeholder="Nama Anda">
+                <textarea x-model="guestMsg" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg mb-3 outline-none" placeholder="Pesan..."></textarea>
+                <button @click="sendGuestbook()" class="w-full bg-emerald-600 py-3 rounded-lg font-bold">Kirim Pesan</button>
+            </div>
+            <div class="space-y-3">
+                <template x-for="msg in messages" :key="msg.id">
+                    <div class="p-4 bg-slate-800/50 border border-slate-700 rounded-xl">
+                        <p class="font-bold text-emerald-400" x-text="msg.name"></p>
+                        <p class="text-slate-300" x-text="msg.message"></p>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // KONFIGURASI SUPABASE (Ganti dengan milik Anda)
+        const SB_URL = https://yqfrbdyjhwjysrjentoj.supabase.co;
+        const SB_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxZnJiZHlqaHdqeXNyamVudG9qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0ODM0MjAsImV4cCI6MjA4ODA1OTQyMH0.8G9Lcqem7MbviwmpfFc-lG1Ce2hd1GznVOHDFL2RYOU;
+        const supabase = supabase.createClient(SB_URL, SB_KEY);
+
+        function app() {
+            return {
+                tab: 'ontime',
+                agendas: [], newAgenda: '',
+                messages: [], guestName: '', guestMsg: '',
+
+                async init() {
+                    this.fetchAgendas();
+                    this.fetchMessages();
+                },
+
+                async fetchAgendas() {
+                    let { data } = await supabase.from('ontime').select('*').order('id', { ascending: false });
+                    this.agendas = data;
+                },
+
+                async addAgenda() {
+                    if(!this.newAgenda) return;
+                    await supabase.from('ontime').insert([{ task: this.newAgenda }]);
+                    this.newAgenda = '';
+                    this.fetchAgendas();
+                },
+
+                async fetchMessages() {
+                    let { data } = await supabase.from('intouch').select('*').order('id', { ascending: false });
+                    this.messages = data;
+                },
+
+                async sendGuestbook() {
+                    if(!this.guestName || !this.guestMsg) return;
+                    await supabase.from('intouch').insert([{ name: this.guestName, message: this.guestMsg }]);
+                    this.guestName = ''; this.guestMsg = '';
+                    this.fetchMessages();
+                    alert("Pesan terkirim!");
+                },
+
+                async deleteItem(table, id) {
+                    await supabase.from(table).delete().eq('id', id);
+                    table === 'ontime' ? this.fetchAgendas() : this.fetchMessages();
+                }
+            }
+        }
+    </script>
+</body>
+</html>
